@@ -71,8 +71,8 @@ private:
     std::unordered_map<int, std::pair<std::mutex, dtNavMesh*>> NavMeshMap;
     std::unordered_map<int, AmeisenNavClient*> Clients;
 
-    float smallExtents[3] = { 6.0f, 6.0f, 6.0f };
-    float heightExtents[3] = { 6.0f, 10000.0f, 6.0f };
+    const float smallExtents[3] = { 6.0f, 6.0f, 6.0f };
+    const float heightExtents[3] = { 3.0f, 10000.0f, 3.0f };
 
 public:
     /// <summary>
@@ -240,7 +240,7 @@ private:
     /// <param name="closestPointOnPoly">Closest point on the found poly.</param>
     /// <param name="extents">Bounding box of the search area</param>
     /// <returns>Reference to the found poly if found, else 0.</returns>
-    inline dtPolyRef GetNearestPoly(int clientId, int mapId, float* position, float* closestPointOnPoly, float* extents) const noexcept
+    inline dtPolyRef GetNearestPoly(int clientId, int mapId, float* position, float* closestPointOnPoly, const float* extents) const noexcept
     {
         dtPolyRef polyRef;
         bool result = dtStatusSucceed(Clients.at(clientId)->GetNavmeshQuery(mapId)->findNearestPoly(position, extents, &QueryFilter, &polyRef, closestPointOnPoly));
