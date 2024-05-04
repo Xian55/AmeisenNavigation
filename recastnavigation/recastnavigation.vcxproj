@@ -34,6 +34,11 @@
     <ClInclude Include="Detour\Include\DetourPathQueue.h" />
     <ClInclude Include="Detour\Include\DetourProximityGrid.h" />
     <ClInclude Include="Detour\Include\DetourStatus.h" />
+    <ClInclude Include="Detour\Include\DetourTileCache.h" />
+    <ClInclude Include="Detour\Include\DetourTileCacheBuilder.h" />
+    <ClInclude Include="Recast\Include\Recast.h" />
+    <ClInclude Include="Recast\Include\RecastAlloc.h" />
+    <ClInclude Include="Recast\Include\RecastAssert.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Detour\Source\DetourAlloc.cpp" />
@@ -49,6 +54,19 @@
     <ClCompile Include="Detour\Source\DetourPathCorridor.cpp" />
     <ClCompile Include="Detour\Source\DetourPathQueue.cpp" />
     <ClCompile Include="Detour\Source\DetourProximityGrid.cpp" />
+    <ClCompile Include="Detour\Source\DetourTileCache.cpp" />
+    <ClCompile Include="Detour\Source\DetourTileCacheBuilder.cpp" />
+    <ClCompile Include="Recast\Source\Recast.cpp" />
+    <ClCompile Include="Recast\Source\RecastAlloc.cpp" />
+    <ClCompile Include="Recast\Source\RecastArea.cpp" />
+    <ClCompile Include="Recast\Source\RecastAssert.cpp" />
+    <ClCompile Include="Recast\Source\RecastContour.cpp" />
+    <ClCompile Include="Recast\Source\RecastFilter.cpp" />
+    <ClCompile Include="Recast\Source\RecastLayers.cpp" />
+    <ClCompile Include="Recast\Source\RecastMesh.cpp" />
+    <ClCompile Include="Recast\Source\RecastMeshDetail.cpp" />
+    <ClCompile Include="Recast\Source\RecastRasterization.cpp" />
+    <ClCompile Include="Recast\Source\RecastRegion.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -66,26 +84,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -131,11 +149,13 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\recastnavigation\Detour\Include;</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)\recastnavigation\Detour\Include;$(SolutionDir)\recastnavigation\Recast\Include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>Default</LanguageStandard_C>
       <AdditionalOptions>
       </AdditionalOptions>
+      <OpenMPSupport>true</OpenMPSupport>
+      <CallingConvention>Cdecl</CallingConvention>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -144,11 +164,13 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>Default</LanguageStandard_C>
-      <AdditionalIncludeDirectories>$(SolutionDir)\recastnavigation\Detour\Include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\recastnavigation\Detour\Include;$(SolutionDir)\recastnavigation\Recast\Include</AdditionalIncludeDirectories>
       <AdditionalOptions>
       </AdditionalOptions>
+      <OpenMPSupport>true</OpenMPSupport>
+      <CallingConvention>Cdecl</CallingConvention>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -159,14 +181,16 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\recastnavigation\Detour\Include;</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)\recastnavigation\Detour\Include;$(SolutionDir)\recastnavigation\Recast\Include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <LanguageStandard_C>Default</LanguageStandard_C>
       <OmitFramePointers>true</OmitFramePointers>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <AdditionalOptions>
       </AdditionalOptions>
+      <OpenMPSupport>true</OpenMPSupport>
+      <CallingConvention>Cdecl</CallingConvention>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -181,15 +205,17 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>Default</LanguageStandard_C>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <AdditionalOptions>
       </AdditionalOptions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\recastnavigation\Detour\Include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\recastnavigation\Detour\Include;$(SolutionDir)\recastnavigation\Recast\Include</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <OpenMPSupport>true</OpenMPSupport>
+      <CallingConvention>Cdecl</CallingConvention>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <map>
-#include <string>
-#include <fstream>
-#include <sstream>
 #include <filesystem>
+#include <fstream>
+#include <map>
+#include <sstream>
+#include <string>
 
 constexpr auto CONFIG_CHAR_BOOL = 'b';
 constexpr auto CONFIG_CHAR_INT = 'i';
@@ -18,25 +18,33 @@ struct AmeisenNavConfig
 private:
     std::map<std::string, void*> Map
     {
+        { "bUseAnpFileFormat", &useAnpFileFormat },
         { "fCatmullRomSplineAlpha", &catmullRomSplineAlpha },
         { "fRandomPathMaxDistance", &randomPathMaxDistance },
+        { "iBezierCurvePoints", &bezierCurvePoints },
         { "iCatmullRomSplinePoints", &catmullRomSplinePoints },
+        { "iMaxPointPath", &maxPointPath },
         { "iMaxPolyPath", &maxPolyPath },
         { "iMaxSearchNodes", &maxSearchNodes },
+        { "iMmapFormat", &mmapFormat },
         { "iPort", &port },
         { "sIp", &ip },
         { "sMmapsPath", &mmapsPath },
     };
 
 public:
-    float catmullRomSplineAlpha = 1.0f;
+    bool useAnpFileFormat = false; // this will become the default when its stable and field tested
+    float catmullRomSplineAlpha = 0.5f;
     float randomPathMaxDistance = 1.5f;
+    int bezierCurvePoints = 8;
     int catmullRomSplinePoints = 4;
-    int maxPolyPath = 512;
+    int maxPointPath = 512;
+    int maxPolyPath = 2048;
     int maxSearchNodes = 65535;
+    int mmapFormat = static_cast<int>(MmapFormat::UNKNOWN);
     int port = 47110;
     std::string ip = "127.0.0.1";
-    std::string mmapsPath = "C:\\shady stuff\\mmaps\\";
+    std::string mmapsPath = "C:\\meshes\\";
 
     void Save(const std::filesystem::path& path)
     {

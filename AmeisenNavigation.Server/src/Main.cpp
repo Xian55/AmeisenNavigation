@@ -1,6 +1,6 @@
 #include "Main.hpp"
 
-int main(int argc, const char* argv[])
+int __cdecl main(int argc, const char* argv[])
 {
 #if defined(WIN32) || defined(WIN64)
     SetConsoleTitle(L"AmeisenNavigation Server");
@@ -84,18 +84,23 @@ int main(int argc, const char* argv[])
         return 1;
     }
 
-    Nav = new AmeisenNavigation(Config->mmapsPath, Config->maxPolyPath, Config->maxSearchNodes);
+    Nav = new AmeisenNavigation(Config->mmapsPath, Config->maxPolyPath, Config->maxSearchNodes, Config->useAnpFileFormat);
     Server = new AnTcpServer(Config->ip, Config->port);
 
     Server->SetOnClientConnected(OnClientConnect);
     Server->SetOnClientDisconnected(OnClientDisconnect);
 
     Server->AddCallback(static_cast<char>(MessageType::PATH), PathCallback);
-    Server->AddCallback(static_cast<char>(MessageType::RANDOM_PATH), RandomPathCallback);
-    Server->AddCallback(static_cast<char>(MessageType::RANDOM_POINT), RandomPointCallback);
     Server->AddCallback(static_cast<char>(MessageType::RANDOM_POINT_AROUND), RandomPointAroundCallback);
     Server->AddCallback(static_cast<char>(MessageType::MOVE_ALONG_SURFACE), MoveAlongSurfaceCallback);
     Server->AddCallback(static_cast<char>(MessageType::CAST_RAY), CastRayCallback);
+
+    Server->AddCallback(static_cast<char>(MessageType::RANDOM_PATH), RandomPathCallback);
+    Server->AddCallback(static_cast<char>(MessageType::RANDOM_POINT), RandomPointCallback);
+
+    Server->AddCallback(static_cast<char>(MessageType::EXPLORE_POLY), ExplorePolyCallback);
+
+    Server->AddCallback(static_cast<char>(MessageType::CONFIGURE_FILTER), ConfigureFilterCallback);
 
     LogS("Starting server on: ", Config->ip, ":", std::to_string(Config->port));
     Server->Run();
@@ -105,16 +110,18 @@ int main(int argc, const char* argv[])
     delete Nav;
     delete Server;
 
-    for (const auto& kv : ClientPathBuffers)
+    for (const auto& [id, buffers] : ClientPathBuffers)
     {
-        if (kv.second.first)
+        if (buffers.first)
         {
-            delete[] kv.second.first;
+            delete[] buffers.first->points;
+            delete[] buffers.first;
         }
 
-        if (kv.second.second)
+        if (buffers.second)
         {
-            delete[] kv.second.second;
+            delete[] buffers.second->points;
+            delete[] buffers.second;
         }
     }
 }
@@ -134,18 +141,25 @@ void OnClientConnect(ClientHandler* handler) noexcept
 {
     LogI("Client Connected: ", handler->GetIpAddress(), ":", handler->GetPort());
 
-    ClientPathBuffers[handler->GetId()] = std::make_pair(new float[Config->maxPolyPath * 3], new float[Config->maxPolyPath * 3]);
-    Nav->NewClient(handler->GetId());
+    ClientPathBuffers[handler->GetId()] = std::make_pair
+    (
+        new Path(Config->maxPointPath),
+        new Path(Config->maxPointPath)
+    );
+
+    Nav->NewClient(handler->GetId(), static_cast<MmapFormat>(Config->mmapFormat));
 }
 
 void OnClientDisconnect(ClientHandler* handler) noexcept
 {
     Nav->FreeClient(handler->GetId());
 
-    delete[] ClientPathBuffers[handler->GetId()].first;
+    if (ClientPathBuffers[handler->GetId()].first->points) delete[] ClientPathBuffers[handler->GetId()].first->points;
+    if (ClientPathBuffers[handler->GetId()].first) delete ClientPathBuffers[handler->GetId()].first;
     ClientPathBuffers[handler->GetId()].first = nullptr;
 
-    delete[] ClientPathBuffers[handler->GetId()].second;
+    if (ClientPathBuffers[handler->GetId()].second->points) delete[] ClientPathBuffers[handler->GetId()].second->points;
+    if (ClientPathBuffers[handler->GetId()].second) delete ClientPathBuffers[handler->GetId()].second;
     ClientPathBuffers[handler->GetId()].second = nullptr;
 
     LogI("Client Disconnected: ", handler->GetIpAddress(), ":", handler->GetPort());
@@ -161,31 +175,12 @@ void RandomPathCallback(ClientHandler* handler, char type, const void* data, int
     GenericPathCallback(handler, type, data, size, PathType::RANDOM);
 }
 
-void RandomPointCallback(ClientHandler* handler, char type, const void* data, int size) noexcept
-{
-    const int mapId = *reinterpret_cast<const int*>(data);
-    float point[3]{};
-
-    Nav->GetRandomPoint(handler->GetId(), mapId, point);
-    handler->SendData(type, point, VEC3_SIZE);
-}
-
-void RandomPointAroundCallback(ClientHandler* handler, char type, const void* data, int size) noexcept
-{
-    const RandomPointAroundData request = *reinterpret_cast<const RandomPointAroundData*>(data);
-    float point[3]{};
-
-    Nav->GetRandomPointAround(handler->GetId(), request.mapId, request.start, request.radius, point);
-    handler->SendData(type, point, VEC3_SIZE);
-}
-
 void MoveAlongSurfaceCallback(ClientHandler* handler, char type, const void* data, int size) noexcept
 {
     const MoveRequestData request = *reinterpret_cast<const MoveRequestData*>(data);
-    float point[3]{};
-
+    Vector3 point;
     Nav->MoveAlongSurface(handler->GetId(), request.mapId, request.start, request.end, point);
-    handler->SendData(type, point, VEC3_SIZE);
+    handler->SendData(type, point, sizeof(Vector3));
 }
 
 void CastRayCallback(ClientHandler* handler, char type, const void* data, int size) noexcept
@@ -195,60 +190,111 @@ void CastRayCallback(ClientHandler* handler, char type, const void* data, int si
 
     if (Nav->CastMovementRay(handler->GetId(), request.mapId, request.start, request.end, &hit))
     {
-        handler->SendData(type, request.end, VEC3_SIZE);
+        handler->SendData(type, request.end, sizeof(Vector3));
     }
     else
     {
-        float zero[3]{};
-        handler->SendData(type, zero, VEC3_SIZE);
+        Vector3 zero;
+        handler->SendData(type, zero, sizeof(Vector3));
     }
 }
 
 void GenericPathCallback(ClientHandler* handler, char type, const void* data, int size, PathType pathType) noexcept
 {
     const PathRequestData request = *reinterpret_cast<const PathRequestData*>(data);
-
-    int pathSize = 0;
-    float* pathBuffer = ClientPathBuffers[handler->GetId()].first;
-
     bool pathGenerated = false;
+
+    Path& path = *ClientPathBuffers[handler->GetId()].first;
+    Path& pathMisc = *ClientPathBuffers[handler->GetId()].second;
 
     switch (pathType)
     {
     case PathType::STRAIGHT:
-        pathGenerated = Nav->GetPath(handler->GetId(), request.mapId, request.start, request.end, pathBuffer, &pathSize);
+        pathGenerated = Nav->GetPath(handler->GetId(), request.mapId, request.start, request.end, path);
         break;
     case PathType::RANDOM:
-        pathGenerated = Nav->GetRandomPath(handler->GetId(), request.mapId, request.start, request.end, pathBuffer, &pathSize, Config->randomPathMaxDistance);
+        pathGenerated = Nav->GetRandomPath(handler->GetId(), request.mapId, request.start, request.end, path, Config->randomPathMaxDistance);
         break;
     }
 
     if (pathGenerated)
     {
-        if ((request.flags & static_cast<int>(PathRequestFlags::CATMULLROM)) && pathSize > 9)
-        {
-            int smoothedPathSize = 0;
-            float* smoothedPathBuffer = ClientPathBuffers[handler->GetId()].second;
-            Nav->SmoothPathCatmullRom(pathBuffer, pathSize, smoothedPathBuffer, &smoothedPathSize, Config->catmullRomSplinePoints, Config->catmullRomSplineAlpha);
-
-            handler->SendData(type, smoothedPathBuffer, smoothedPathSize * sizeof(float));
-        }
-        else if ((request.flags & static_cast<int>(PathRequestFlags::CHAIKIN)) && pathSize > 6)
-        {
-            int smoothedPathSize = 0;
-            float* smoothedPathBuffer = ClientPathBuffers[handler->GetId()].second;
-            Nav->SmoothPathChaikinCurve(pathBuffer, pathSize, smoothedPathBuffer, &smoothedPathSize);
-
-            handler->SendData(type, smoothedPathBuffer, smoothedPathSize * sizeof(float));
-        }
-        else
-        {
-            handler->SendData(type, pathBuffer, pathSize * sizeof(float));
-        }
+        HandlePathFlagsAndSendData(handler, request.mapId, request.flags, path, pathMisc, type, pathType);
     }
     else
     {
-        float zero[3]{};
-        handler->SendData(type, zero, VEC3_SIZE);
+        Vector3 zero;
+        handler->SendData(type, zero, sizeof(Vector3));
     }
+
+    path.pointCount = 0;
+    pathMisc.pointCount = 0;
+}
+
+void RandomPointCallback(ClientHandler* handler, char type, const void* data, int size) noexcept
+{
+    const int mapId = *reinterpret_cast<const int*>(data);
+    Vector3 point;
+    Nav->GetRandomPoint(handler->GetId(), mapId, point);
+    handler->SendData(type, point, sizeof(Vector3));
+}
+
+void RandomPointAroundCallback(ClientHandler* handler, char type, const void* data, int size) noexcept
+{
+    const RandomPointAroundData request = *reinterpret_cast<const RandomPointAroundData*>(data);
+    Vector3 point;
+    Nav->GetRandomPointAround(handler->GetId(), request.mapId, request.start, request.radius, point);
+    handler->SendData(type, point, sizeof(Vector3));
+}
+
+void ExplorePolyCallback(ClientHandler* handler, char type, const void* data, int size) noexcept
+{
+    const ExplorePolyData request = *reinterpret_cast<const ExplorePolyData*>(data);
+
+    Path& path = *ClientPathBuffers[handler->GetId()].first;
+    Path& pathMisc = *ClientPathBuffers[handler->GetId()].second;
+
+    bool pathGenerated = Nav->GetPolyExplorationPath
+    (
+        handler->GetId(),
+        request.mapId,
+        &request.firstPolyPoint,
+        request.polyPointCount,
+        path,
+        pathMisc,
+        request.start,
+        request.viewDistance
+    );
+
+    if (pathGenerated)
+    {
+        HandlePathFlagsAndSendData(handler, request.mapId, request.flags, path, pathMisc, type, PathType::STRAIGHT);
+    }
+    else
+    {
+        Vector3 zero;
+        handler->SendData(type, zero, sizeof(Vector3));
+    }
+
+    path.pointCount = 0;
+    pathMisc.pointCount = 0;
+}
+
+void ConfigureFilterCallback(ClientHandler* handler, char type, const void* data, int size) noexcept
+{
+    bool result = true;
+    const ConfigureFilterData request = *reinterpret_cast<const ConfigureFilterData*>(data);
+
+    AmeisenNavClient* client = Nav->GetClient(handler->GetId());
+    client->ResetQueryFilter();
+
+    const FilterConfig* filterConfigs = &request.firstFilterConfig;
+
+    for (size_t i = 0; i < request.filterConfigCount; ++i)
+    {
+        client->ConfigureQueryFilter(filterConfigs[i].areaId, filterConfigs[i].cost);
+    }
+
+    client->UpdateQueryFilter(request.state);
+    handler->SendData(type, &result, sizeof(bool));
 }
