@@ -59,6 +59,9 @@ private:
     IQueryFilterProvider* FilterProvider;
     std::unordered_map<size_t, AmeisenNavClient*> Clients;
 
+    static constexpr const float smallExtents[3] = { 6.0f, 6.0f, 6.0f };
+    static constexpr const float heightExtents[3] = { 3.0f, 10000.0f, 3.0f };
+
 public:
     /// <summary>
     /// Create a new instance of the AmeisenNavigation class to handle pathfinding.
@@ -248,6 +251,11 @@ public:
     /// <param name="points">How many points to generate, the more the smoother the path will be.</param>
     void SmoothPathBezier(const Path& input, Path& output, int points) const noexcept;
 
+    /// <summary>
+    /// Used by the GetPath and GetRandomPath methods to generate a path.
+    /// </summary>
+    //bool FindLocationInExtent(int clientId, int mapId, float* position) noexcept;
+
 private:
     /// <summary>
     /// Try to find the nearest poly for a given position.
@@ -258,10 +266,8 @@ private:
     /// <param name="closestPointOnPoly">Closest point on the found poly.</param>
     /// <param name="polyRef">dtPolyRef of the found poly.</param>
     /// <returns>Reference to the found poly if found, else 0.</returns>
-    inline dtStatus GetNearestPoly(const dtNavMeshQuery* query, const dtQueryFilter* filter, const Vector3& position, Vector3& closestPointOnPoly, dtPolyRef* polyRef, bool convertWowToRd = true) const noexcept
+    inline dtStatus GetNearestPoly(const dtNavMeshQuery* query, const dtQueryFilter* filter, const Vector3& position, Vector3& closestPointOnPoly, dtPolyRef* polyRef, const float* extents, bool convertWowToRd = true) const noexcept
     {
-        const float extents[3] = { 6.0f, 6.0f, 6.0f };
-
         if (convertWowToRd)
         {
             position.CopyToRDCoords(closestPointOnPoly);
@@ -271,9 +277,9 @@ private:
         return query->findNearestPoly(position, extents, filter, polyRef, closestPointOnPoly);
     }
 
-    inline dtStatus GetNearestPoly(const dtNavMeshQuery* query, const dtQueryFilter* filter, const Vector3& position, PolyPosition& poly, bool convertWowToRd = true) const noexcept
+    inline dtStatus GetNearestPoly(const dtNavMeshQuery* query, const dtQueryFilter* filter, const Vector3& position, PolyPosition& poly, const float* extend = smallExtents, bool convertWowToRd = true) const noexcept
     {
-        return GetNearestPoly(query, filter, position, poly.pos, &poly.poly, convertWowToRd);
+        return GetNearestPoly(query, filter, position, poly.pos, &poly.poly, extend, convertWowToRd);
     }
 
     /// <summary>

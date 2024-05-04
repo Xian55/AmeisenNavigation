@@ -90,34 +90,37 @@ bool AmeisenNavigation::MoveAlongSurface(size_t clientId, int mapId, const Vecto
     if (!TryGetClientAndQuery(clientId, mapId, client, query)) { return false; }
     ANAV_DEBUG_ONLY(std::cout << ">> [" << clientId << "] MoveAlongSurface (" << mapId << ") " << PRINT_VEC3(startPosition) << " -> " << PRINT_VEC3(endPosition) << std::endl);
 
-    if (PolyPosition start; dtStatusSucceed(GetNearestPoly(query, client->QueryFilter(), startPosition, start)))
+    if (PolyPosition start; dtStatusSucceed(GetNearestPoly(query, client->QueryFilter(), startPosition, start, heightExtents)))
     {
-        Vector3 rdEnd;
-        endPosition.CopyToRDCoords(rdEnd);
+        //Vector3 rdEnd;
+        //endPosition.CopyToRDCoords(rdEnd);
 
-        int visitedCount = 0;
-        dtPolyRef visited[8];
-        dtStatus moveAlongSurfaceStatus = query->moveAlongSurface
-        (
-            start.poly,
-            start.pos,
-            rdEnd,
-            client->QueryFilter(),
-            positionToGoTo,
-            visited,
-            &visitedCount,
-            sizeof(visited) / sizeof(dtPolyRef)
-        );
+        if (PolyPosition end; dtStatusSucceed(GetNearestPoly(query, client->QueryFilter(), endPosition, end, heightExtents)))
+        {
+            int visitedCount = 0;
+            dtPolyRef visited[8];
+            dtStatus moveAlongSurfaceStatus = query->moveAlongSurface
+            (
+                start.poly,
+                start.pos,
+                end.pos,
+                client->QueryFilter(),
+                positionToGoTo,
+                visited,
+                &visitedCount,
+                sizeof(visited) / sizeof(dtPolyRef)
+            );
 
-        if (dtStatusSucceed(moveAlongSurfaceStatus))
-        {
-            positionToGoTo.ToWowCoords();
-            ANAV_DEBUG_ONLY(std::cout << ">> [" << clientId << "] moveAlongSurface: " << PRINT_VEC3(positionToGoTo) << std::endl);
-            return true;
-        }
-        else
-        {
-            ANAV_ERROR_MSG(std::cout << ">> [" << clientId << "] Failed to call moveAlongSurface: " << moveAlongSurfaceStatus << std::endl);
+            if (dtStatusSucceed(moveAlongSurfaceStatus))
+            {
+                positionToGoTo.ToWowCoords();
+                ANAV_DEBUG_ONLY(std::cout << ">> [" << clientId << "] moveAlongSurface: " << PRINT_VEC3(positionToGoTo) << std::endl);
+                return true;
+            }
+            else
+            {
+                ANAV_ERROR_MSG(std::cout << ">> [" << clientId << "] Failed to call moveAlongSurface: " << moveAlongSurfaceStatus << std::endl);
+            }
         }
     }
 
@@ -407,9 +410,9 @@ bool AmeisenNavigation::CalculateNormalPath
     dtPolyRef* visited
 ) noexcept
 {
-    if (PolyPosition start; dtStatusSucceed(GetNearestPoly(query, filter, startPosition, start)))
+    if (PolyPosition start; dtStatusSucceed(GetNearestPoly(query, filter, startPosition, start, heightExtents)))
     {
-        if (PolyPosition end; dtStatusSucceed(GetNearestPoly(query, filter, endPosition, end)))
+        if (PolyPosition end; dtStatusSucceed(GetNearestPoly(query, filter, endPosition, end, heightExtents)))
         {
             int polyPathCount = 0;
             dtStatus polyPathStatus = query->findPath

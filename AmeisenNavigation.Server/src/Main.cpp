@@ -139,7 +139,7 @@ int __stdcall SigIntHandler(unsigned long signal)
 
 void OnClientConnect(ClientHandler* handler) noexcept
 {
-    LogI("Client Connected: ", handler->GetIpAddress(), ":", handler->GetPort());
+LogI("Client Connected: ", handler->GetIpAddress(), ":", handler->GetPort());
 
     ClientPathBuffers[handler->GetId()] = std::make_pair
     (
@@ -202,6 +202,26 @@ void CastRayCallback(ClientHandler* handler, char type, const void* data, int si
 void GenericPathCallback(ClientHandler* handler, char type, const void* data, int size, PathType pathType) noexcept
 {
     const PathRequestData request = *reinterpret_cast<const PathRequestData*>(data);
+
+    float rdStart[3];
+    dtVcopy(rdStart, request.start);
+
+    float rdEnd[3];
+    dtVcopy(rdEnd, request.end);
+
+    /*
+    if (request.flags & static_cast<int>(PathRequestFlags::FIND_LOCATION))
+    {
+        if (!Nav->FindLocationInExtent(handler->GetId(), request.mapId, rdStart) ||
+            !Nav->FindLocationInExtent(handler->GetId(), request.mapId, rdEnd))
+        {
+            const float zero[3]{};
+            handler->SendData(type, zero, sizeof(Vector3));
+            return;
+        }
+    }
+    */
+
     bool pathGenerated = false;
 
     Path& path = *ClientPathBuffers[handler->GetId()].first;
@@ -210,10 +230,10 @@ void GenericPathCallback(ClientHandler* handler, char type, const void* data, in
     switch (pathType)
     {
     case PathType::STRAIGHT:
-        pathGenerated = Nav->GetPath(handler->GetId(), request.mapId, request.start, request.end, path);
+        pathGenerated = Nav->GetPath(handler->GetId(), request.mapId, rdStart, rdEnd, path);
         break;
     case PathType::RANDOM:
-        pathGenerated = Nav->GetRandomPath(handler->GetId(), request.mapId, request.start, request.end, path, Config->randomPathMaxDistance);
+        pathGenerated = Nav->GetRandomPath(handler->GetId(), request.mapId, rdStart, rdEnd, path, Config->randomPathMaxDistance);
         break;
     }
 
