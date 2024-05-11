@@ -16,7 +16,8 @@
         <Button x:Name="ButtonRun" Content="GetPath" Margin="385,33,0,0" VerticalAlignment="Top" Click="ButtonRun_Click" Height="18" HorizontalAlignment="Left" Width="120" />
         <Rectangle x:Name="ImgRect" Margin="10,60,280,10" Fill="Gainsboro" />
         <Image x:Name="ImgCanvas" Margin="10,60,280,10" />
-        <ListBox x:Name="PointList" Margin="0,300,10,10" HorizontalAlignment="Right" Width="265" />
+        <Button x:Name="ButtonSend" Content="Send to Remote PPather" Margin="625,307,0,0" VerticalAlignment="Top" Click="ButtonSend_Click" Height="18" HorizontalAlignment="Left" Width="265" />
+        <ListBox x:Name="PointList" Margin="0,330,10,10" HorizontalAlignment="Right" Width="265" />
         <Label Content="Start" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Padding="1"/>
         <Label Content="End" HorizontalAlignment="Left" Margin="10,33,0,0" VerticalAlignment="Top" Padding="1"/>
         <TextBox x:Name="TextBoxStartX" HorizontalAlignment="Left" Margin="41,10,0,0" Text="0.0" TextWrapping="Wrap" VerticalAlignment="Top" Width="100"/>

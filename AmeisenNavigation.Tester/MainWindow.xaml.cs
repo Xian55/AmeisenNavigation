@@ -41,10 +41,13 @@ namespace AmeisenNavigation.Tester
             }
         }
 
+        private readonly RemotePathingAPI pathingAPI;
+
         public MainWindow()
         {
             InitializeComponent();
-            Client = new("127.0.0.1", 47110);
+            Client = new("127.0.0.1", 47111);
+            pathingAPI = new();
         }
 
         private AnTcpClient Client { get; set; }
@@ -154,6 +157,19 @@ namespace AmeisenNavigation.Tester
         {
             GetPathAndDraw();
         }
+
+        private async void ButtonSend_Click(object sender, RoutedEventArgs e)
+        {
+            if (PointList.ItemsSource is null)
+                return;
+
+            if (PointList.ItemsSource is not IEnumerable<Vector3> path)
+                return;
+
+            DrawWorldPathRequest request = new(MapId, path.ToArray());
+            await pathingAPI.DrawWorldPath(request);
+        }
+
 
         private void GetPathAndDraw()
         {
