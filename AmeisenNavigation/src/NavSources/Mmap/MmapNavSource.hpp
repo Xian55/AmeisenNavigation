@@ -147,6 +147,12 @@ private:
         return true;
     }
 
+    template<typename T>
+    const T& unmove(T&& x)
+    {
+        return x;
+    }
+
     /// <summary>
     /// Used to detect the mmap file format.
     /// </summary>
@@ -155,7 +161,7 @@ private:
     {
         for (const auto& [format, pattern] : MmapFormatPatterns)
         {
-            if (std::filesystem::exists(MmapFolder / std::vformat(pattern.second, std::make_format_args(0, 27, 27))))
+            if (std::filesystem::exists(MmapFolder / std::vformat(pattern.second, std::make_format_args(unmove(0), unmove(27), unmove(27)))))
             {
                 return format;
             }
