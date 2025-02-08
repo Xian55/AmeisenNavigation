@@ -20,6 +20,7 @@ class MmapNavSource : public INavSource
     {
         { MmapFormat::TC335A, std::make_pair("{:03}.mmap", "{:03}{:02}{:02}.mmtile") },
         { MmapFormat::SF548, std::make_pair("{:04}.mmap", "{:04}_{:02}_{:02}.mmtile") },
+        { MmapFormat::CLASSIC_ERA, std::make_pair("{:04}.mmap", "{:04}{:02}{:02}.mmtile") },
     };
 
 public:

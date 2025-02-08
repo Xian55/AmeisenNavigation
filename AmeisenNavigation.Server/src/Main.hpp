@@ -11,7 +11,7 @@
 #include <iostream>
 #include <mutex>
 
-constexpr auto AMEISENNAV_VERSION = "1.8.4.0";
+constexpr auto AMEISENNAV_VERSION = "1.8.5.0";
 
 enum class MessageType
 {

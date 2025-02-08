@@ -27,8 +27,9 @@ Check out the Navigation-Server used in the AmeisenBotX on this [YouTube channel
 3. Set the correct MMAP Format:
    - `-1`: CUSTOM (specify custom filename patterns in config.json, patterns need to be in `std::format` style and match the .map and .mmtile filenames)
    - `0`: AUTO (tries to guess the mmap format based on the files in the mmap folder)
-   - `1`: TrinityCore 3.3.5a
-   - `2`: SkyFire 5.4.8
+   - `1`: TrinityCore 3.3.5a --- `"{:03}.mmap", "{:03}{:02}{:02}.mmtile"`
+   - `2`: SkyFire 5.4.8 -------- `"{:04}.mmap", "{:04}_{:02}_{:02}.mmtile"`
+   - `3`: Classic Era 1.15.x --- `"{:04}.mmap", "{:04}{:02}{:02}.mmtile"`
 5. Specify the MMAPs folder location:
    - Export the MMAPs using TrinityCore tools (recommended)
    - Or download MMAPs from the internet (may cause errors due to old versions)
